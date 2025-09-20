@@ -1,0 +1,8 @@
+node_modules
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+.idea
+
+dist
