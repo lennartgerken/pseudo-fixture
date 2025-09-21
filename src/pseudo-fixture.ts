@@ -1,26 +1,22 @@
 import { exportParams } from './export-params'
 
-type Definitions<Fixtures, Options> = {
+type Definitions<Fixtures> = {
     [Key in keyof Fixtures]: {
-        setup: (fixtures: Fixtures & Options) => Promise<Fixtures[Key]>
-        teardown?: (fixtures: Fixtures & Options) => Promise<void>
+        setup: (fixtures: Fixtures) => Promise<Fixtures[Key]>
+        teardown?: (fixtures: Fixtures) => Promise<void>
     }
 }
 
-export class PseudoFixture<Fixtures extends object, Options extends object> {
-    protected definitions: Definitions<Fixtures, Options>
-    protected options: Options
+export class PseudoFixture<Fixtures extends object> {
+    protected definitions: Definitions<Fixtures>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readyFixtures: any
-    protected teardownsToRun: ((
-        fixtures: Fixtures & Options
-    ) => Promise<void>)[]
+    protected teardownsToRun: ((fixtures: Fixtures) => Promise<void>)[]
     protected waitForPreparation: Set<string>
 
-    constructor(definitions: Definitions<Fixtures, Options>, options: Options) {
+    constructor(definitions: Definitions<Fixtures>) {
         this.definitions = definitions
-        this.options = options
-        this.readyFixtures = options
+        this.readyFixtures = {}
         this.teardownsToRun = []
         this.waitForPreparation = new Set()
     }
@@ -54,7 +50,7 @@ export class PseudoFixture<Fixtures extends object, Options extends object> {
         }
     }
 
-    async run(callback: (fixtures: Fixtures & Options) => Promise<void>) {
+    async run(callback: (fixtures: Fixtures) => Promise<void>) {
         for (const param of exportParams(callback))
             await this.prepareFixture(param)
 
