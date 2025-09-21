@@ -1,4 +1,4 @@
-import { exportParams } from './export-params.js'
+import { exportParams } from './export-params'
 
 type Definitions<Fixtures, Options> = {
     [Key in keyof Fixtures]: {
@@ -10,12 +10,12 @@ type Definitions<Fixtures, Options> = {
 export class PseudoFixture<Fixtures extends object, Options extends object> {
     protected definitions: Definitions<Fixtures, Options>
     protected options: Options
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readyFixtures: any
     protected teardownsToRun: ((
         fixtures: Fixtures & Options
     ) => Promise<void>)[]
-
-    private waitForPreparation: Set<string>
+    protected waitForPreparation: Set<string>
 
     constructor(definitions: Definitions<Fixtures, Options>, options: Options) {
         this.definitions = definitions
@@ -26,14 +26,15 @@ export class PseudoFixture<Fixtures extends object, Options extends object> {
     }
 
     protected async prepareFixture(fixtureName: string) {
+        const definition = this.definitions[fixtureName]
         if (
-            Object.keys(this.definitions).includes(fixtureName) &&
+            definition &&
+            definition.setup &&
             !this.readyFixtures[fixtureName] &&
             !this.waitForPreparation.has(fixtureName)
         ) {
             this.waitForPreparation.add(fixtureName)
 
-            const definition = this.definitions[fixtureName]
             const setup = definition.setup
             const params = exportParams(setup)
 

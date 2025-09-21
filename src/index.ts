@@ -1,1 +1,1 @@
-export { PseudoFixture } from './pseudo-fixture.js'
+export { PseudoFixture } from './pseudo-fixture'

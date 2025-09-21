@@ -1,12 +1,12 @@
 import * as acorn from 'acorn'
 
-export const exportParams = (fn: Function) => {
+export const exportParams = (fn: (obj: object) => unknown) => {
     const props: string[] = []
     const setProps = (
         pattern: acorn.ArrowFunctionExpression | acorn.FunctionDeclaration
     ) => {
-        if (pattern.params.length > 0) {
-            const param = pattern.params[0]
+        const param = pattern.params[0]
+        if (param) {
             if (param.type === 'ObjectPattern') {
                 param.properties.forEach((prop) => {
                     if (prop.type === 'Property') {
@@ -22,9 +22,8 @@ export const exportParams = (fn: Function) => {
         ecmaVersion: 'latest'
     })
 
-    if (fnParse.body.length > 0) {
-        const statement = fnParse.body[0]
-
+    const statement = fnParse.body[0]
+    if (statement) {
         if (statement.type === 'ExpressionStatement') {
             const expression = statement.expression
             if (expression.type === 'ArrowFunctionExpression') {
