@@ -35,11 +35,7 @@ export class PseudoFixture<Fixtures extends object> {
             const params = exportParams(setup)
 
             for (const param of params) {
-                if (
-                    Object.keys(this.definitions).includes(param) &&
-                    !this.readyFixtures[param]
-                )
-                    await this.prepareFixture(param)
+                if (!this.readyFixtures[param]) await this.prepareFixture(param)
             }
 
             this.readyFixtures[fixtureName] = await setup(this.readyFixtures)
@@ -50,11 +46,11 @@ export class PseudoFixture<Fixtures extends object> {
         }
     }
 
-    async run(callback: (fixtures: Fixtures) => Promise<void>) {
+    async run<T>(callback: (fixtures: Fixtures) => Promise<T>): Promise<T> {
         for (const param of exportParams(callback))
             await this.prepareFixture(param)
 
-        await callback(this.readyFixtures)
+        return await callback(this.readyFixtures)
     }
 
     async runTeardown() {
