@@ -14,6 +14,10 @@ export class PseudoFixture<Fixtures extends object> {
     protected teardownsToRun: ((fixtures: Fixtures) => Promise<void>)[]
     protected waitForPreparation: Set<string>
 
+    /**
+     * Creates a PseudoFixture.
+     * @param definitions Defines how the fixtures are created.
+     */
     constructor(definitions: Definitions<Fixtures>) {
         this.definitions = definitions
         this.readyFixtures = {}
@@ -46,6 +50,11 @@ export class PseudoFixture<Fixtures extends object> {
         }
     }
 
+    /**
+     * Prepares all fixtures required by the callback function and executes the callback with them.
+     * @param callback Function to run inside the PseudoFixture
+     * @returns
+     */
     async run<T>(callback: (fixtures: Fixtures) => Promise<T>): Promise<T> {
         for (const param of exportParams(callback))
             await this.prepareFixture(param)
@@ -53,6 +62,9 @@ export class PseudoFixture<Fixtures extends object> {
         return await callback(this.readyFixtures)
     }
 
+    /**
+     * Runs all teardown functions of used fixtures.
+     */
     async runTeardown() {
         for (const current of this.teardownsToRun) await this.run(current)
 
