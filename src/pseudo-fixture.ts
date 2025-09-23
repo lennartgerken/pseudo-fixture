@@ -54,8 +54,10 @@ export class PseudoFixture<Fixtures extends object> {
     }
 
     async runTeardown() {
-        for (const current of this.teardownsToRun) {
-            await this.run(current)
-        }
+        for (const current of this.teardownsToRun) await this.run(current)
+
+        this.readyFixtures = {}
+        this.teardownsToRun = []
+        this.waitForPreparation.clear()
     }
 }

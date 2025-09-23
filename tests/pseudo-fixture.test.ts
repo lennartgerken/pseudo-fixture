@@ -103,3 +103,24 @@ test('teardown', async () => {
     expect(actual).toBe(f1Value + f3Value + f1TeardownValue)
     expect(f3TeardownRun).toBeTruthy()
 })
+
+test('reset', async () => {
+    let setupCounter = 0
+
+    const pseudoFixture = new PseudoFixture<{
+        f1: number
+    }>({
+        f1: {
+            setup: async () => {
+                setupCounter++
+                return setupCounter
+            }
+        }
+    })
+
+    await pseudoFixture.run(async ({ f1: _f1 }) => {})
+    await pseudoFixture.runTeardown()
+    await pseudoFixture.run(async ({ f1: _f1 }) => {})
+
+    expect(setupCounter).toBe(2)
+})
