@@ -1,6 +1,6 @@
 # pseudo-fixture
 
-pseudo-fixture contains a small helper class for creating reusable fixture structures.
+`pseudo-fixture` contains a small helper class for creating reusable fixture structures.
 
 ## Installation
 
@@ -13,7 +13,7 @@ npm i -D pseudo-fixture
 You can, for example, use `pseudo-fixture` in Playwright to create a fixture structure for working in multiple contexts:\
 Suppose we have an application with a login page and a transaction page. Transactions can be created by users with the role `"basic"` but only approved by users with the role `"approver"`.
 We could create the following custom fixtures:\
-Define the types,used for the `PseudoFixture`:
+Define the types used for the `PseudoFixture`:
 
 ```ts
 // Defines what can be used inside the PseudoFixture.
@@ -130,7 +130,7 @@ export const test = base.extend<Fixtures & Options>({
 })
 ```
 
-Now we can use the PseudoFixtures inside our test functions. For example, we could have a testcase where we create a transaction with our default user with role "basic" and after that approve the transaction with a second user with role "approver". The creation of the users and the navigation is handled in the `PseudoFixture`.
+Now we can use the `PseudoFixture` inside our test functions. For example, we could have a testcase where we create a transaction with our default user with role `"basic"` and after that approve the transaction with a second user with role `"approver"`. The creation of the users and the navigation is handled in the `PseudoFixture`.
 
 ```ts
 test('Transaction workflow', async ({ runPseudoFixture }) => {
