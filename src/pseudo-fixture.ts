@@ -53,7 +53,7 @@ export class PseudoFixture<Fixtures extends object> {
     /**
      * Prepares all fixtures required by the callback function and executes the callback with them.
      * @param callback Function to run inside the PseudoFixture
-     * @returns
+     * @returns Return value of the callback
      */
     async run<T>(callback: (fixtures: Fixtures) => Promise<T>): Promise<T> {
         for (const param of exportParams(callback))
