@@ -1,7 +1,7 @@
 import * as acorn from 'acorn'
 
-export const exportParams = (fn: (obj: object) => unknown) => {
-    const props: string[] = []
+export const exportParams = <T extends object>(fn: (obj: T) => unknown) => {
+    const props: (keyof T)[] = []
     const setProps = (
         pattern: acorn.ArrowFunctionExpression | acorn.FunctionDeclaration
     ) => {
@@ -11,7 +11,7 @@ export const exportParams = (fn: (obj: object) => unknown) => {
                 param.properties.forEach((prop) => {
                     if (prop.type === 'Property') {
                         if (prop.key.type === 'Identifier')
-                            props.push(prop.key.name)
+                            props.push(prop.key.name as keyof T)
                     }
                 })
             }

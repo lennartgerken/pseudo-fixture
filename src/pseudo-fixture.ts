@@ -12,7 +12,7 @@ export class PseudoFixture<Fixtures extends object> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readyFixtures: any
     protected teardownsToRun: ((fixtures: Fixtures) => Promise<void>)[]
-    protected waitForPreparation: Set<string>
+    protected waitForPreparation: Set<keyof Definitions<Fixtures>>
 
     /**
      * Creates a PseudoFixture.
@@ -25,7 +25,7 @@ export class PseudoFixture<Fixtures extends object> {
         this.waitForPreparation = new Set()
     }
 
-    protected async prepareFixture(fixtureName: string) {
+    protected async prepareFixture(fixtureName: keyof Definitions<Fixtures>) {
         const definition = this.definitions[fixtureName]
         if (
             definition &&
@@ -53,7 +53,7 @@ export class PseudoFixture<Fixtures extends object> {
     /**
      * Prepares all fixtures required by the callback function and executes the callback with them.
      * @param callback Function to run inside the PseudoFixture
-     * @returns
+     * @returns Return value of the callback
      */
     async run<T>(callback: (fixtures: Fixtures) => Promise<T>): Promise<T> {
         for (const param of exportParams(callback))

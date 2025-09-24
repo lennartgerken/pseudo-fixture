@@ -3,7 +3,20 @@
     "version": "1.0.0",
     "license": "MIT",
     "author": "Lennart Gerken",
-    "description": "",
+    "description": "Contains a small helper class for creating reusable fixture structures.",
+    "keywords": [
+        "E2E",
+        "test",
+        "testautomation",
+        "fixtures"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/lennartgerken/pseudo-fixture.git"
+    },
+    "bugs": {
+        "url": "https://github.com/lennartgerken/pseudo-fixture/issues"
+    },
     "type": "module",
     "types": "./dist/esm/index.d.ts",
     "exports": {
