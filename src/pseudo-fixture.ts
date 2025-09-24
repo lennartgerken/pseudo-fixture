@@ -12,7 +12,7 @@ export class PseudoFixture<Fixtures extends object> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readyFixtures: any
     protected teardownsToRun: ((fixtures: Fixtures) => Promise<void>)[]
-    protected waitForPreparation: Set<string>
+    protected waitForPreparation: Set<keyof Definitions<Fixtures>>
 
     /**
      * Creates a PseudoFixture.
@@ -25,7 +25,7 @@ export class PseudoFixture<Fixtures extends object> {
         this.waitForPreparation = new Set()
     }
 
-    protected async prepareFixture(fixtureName: string) {
+    protected async prepareFixture(fixtureName: keyof Definitions<Fixtures>) {
         const definition = this.definitions[fixtureName]
         if (
             definition &&
