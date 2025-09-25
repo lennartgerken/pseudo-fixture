@@ -1,6 +1,6 @@
 {
     "name": "pseudo-fixture",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "license": "MIT",
     "author": "Lennart Gerken",
     "description": "Contains a small helper class for creating reusable fixture structures.",
