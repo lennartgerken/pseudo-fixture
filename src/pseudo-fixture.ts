@@ -27,24 +27,25 @@ export class PseudoFixture<Fixtures extends object> {
 
     protected async prepareFixture(fixtureName: keyof Definitions<Fixtures>) {
         const definition = this.definitions[fixtureName]
+
         if (
             definition &&
             definition.setup &&
-            !this.readyFixtures[fixtureName] &&
+            this.readyFixtures[fixtureName] === undefined &&
             !this.waitForPreparation.has(fixtureName)
         ) {
             this.waitForPreparation.add(fixtureName)
 
             const setup = definition.setup
-            const params = exportParams(setup)
+            const teardown = definition.teardown
 
-            for (const param of params) {
-                if (!this.readyFixtures[param]) await this.prepareFixture(param)
-            }
+            let params = exportParams(setup)
+            if (teardown) params = params.concat(exportParams(teardown))
+            for (const param of params) await this.prepareFixture(param)
+
+            if (teardown) this.teardownsToRun.unshift(teardown)
 
             this.readyFixtures[fixtureName] = await setup(this.readyFixtures)
-            if (definition.teardown)
-                this.teardownsToRun.push(definition.teardown)
 
             this.waitForPreparation.delete(fixtureName)
         }
@@ -66,7 +67,8 @@ export class PseudoFixture<Fixtures extends object> {
      * Runs all teardown functions of used fixtures.
      */
     async runTeardown() {
-        for (const current of this.teardownsToRun) await this.run(current)
+        for (const current of this.teardownsToRun)
+            await current(this.readyFixtures)
 
         this.readyFixtures = {}
         this.teardownsToRun = []

@@ -58,50 +58,112 @@ describe('run', () => {
     })
 })
 
-test('teardown', async () => {
-    const f1Value = 'f1'
-    const f3Value = 'f3'
-    const f1TeardownValue = 'Teardown'
+describe('teardown', () => {
+    test('use fixtures', async () => {
+        const f1Value = 'f1'
+        const f3Value = 'f3'
+        const f1TeardownValue = 'Teardown'
 
-    let actual = ''
-    let f3TeardownRun = false
+        let actual = ''
+        let f3TeardownRun = false
 
-    const pseudoFixture = new PseudoFixture<{
-        f1: string
-        f2: string
-        f3: string
-    }>({
-        f1: {
-            setup: async () => {
-                return f1Value
+        const pseudoFixture = new PseudoFixture<{
+            f1: string
+            f2: string
+            f3: string
+        }>({
+            f1: {
+                setup: async () => {
+                    return f1Value
+                },
+                teardown: async ({ f1, f3 }) => {
+                    actual = f1 + f3 + f1TeardownValue
+                }
             },
-            teardown: async ({ f1, f3 }) => {
-                actual = f1 + f3 + f1TeardownValue
-            }
-        },
-        f2: {
-            setup: async () => {
-                return 'f2'
+            f2: {
+                setup: async () => {
+                    return 'f2'
+                },
+                teardown: async () => {
+                    expect.fail()
+                }
             },
-            teardown: async () => {
-                expect.fail()
+            f3: {
+                setup: async () => {
+                    return f3Value
+                },
+                teardown: async () => {
+                    f3TeardownRun = true
+                }
             }
-        },
-        f3: {
-            setup: async () => {
-                return f3Value
-            },
-            teardown: async () => {
-                f3TeardownRun = true
-            }
-        }
+        })
+
+        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        await pseudoFixture.runTeardown()
+
+        expect(actual).toBe(f1Value + f3Value + f1TeardownValue)
+        expect(f3TeardownRun).toBeTruthy()
     })
 
-    await pseudoFixture.run(async ({ f1: _f1 }) => {})
-    await pseudoFixture.runTeardown()
+    test('order', async () => {
+        const f1TeardownValue = 'f1'
+        const f2TeardownValue = 'f2'
+        const f3TeardownValue = 'f3'
+        const f4TeardownValue = 'f4'
 
-    expect(actual).toBe(f1Value + f3Value + f1TeardownValue)
-    expect(f3TeardownRun).toBeTruthy()
+        const exptectedOrder = [
+            f1TeardownValue,
+            f3TeardownValue,
+            f2TeardownValue,
+            f4TeardownValue
+        ]
+        const actualOrder: string[] = []
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: string
+            f2: string
+            f3: string
+            f4: string
+        }>({
+            f1: {
+                setup: async ({ f2: _f2, f3: _f3 }) => {
+                    return ''
+                },
+                teardown: async () => {
+                    actualOrder.push(f1TeardownValue)
+                }
+            },
+            f2: {
+                setup: async () => {
+                    return ''
+                },
+                teardown: async ({ f4: _f4 }) => {
+                    actualOrder.push(f2TeardownValue)
+                }
+            },
+            f3: {
+                setup: async () => {
+                    return ''
+                },
+                teardown: async ({ f4: _f4 }) => {
+                    actualOrder.push(f3TeardownValue)
+                }
+            },
+            f4: {
+                setup: async () => {
+                    return ''
+                },
+                teardown: async () => {
+                    actualOrder.push(f4TeardownValue)
+                }
+            }
+        })
+
+        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        await pseudoFixture.runTeardown()
+
+        expect(actualOrder).toEqual(exptectedOrder)
+    })
 })
 
 test('reset', async () => {
