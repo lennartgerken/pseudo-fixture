@@ -36,6 +36,26 @@ describe('run', () => {
         expect(actual).toBe(f1Value + f2Value)
     })
 
+    test('reuse fixture', async () => {
+        let setupCount = 0
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: number
+        }>({
+            f1: {
+                setup: async () => {
+                    setupCount++
+                    return setupCount
+                }
+            }
+        })
+
+        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+
+        expect(setupCount).toBe(1)
+    })
+
     test('use circular fixtures', async () => {
         const pseudoFixture = new PseudoFixture<{ f1: string; f2: string }>({
             f1: {
@@ -164,6 +184,31 @@ describe('teardown', () => {
 
         expect(actualOrder).toEqual(exptectedOrder)
     })
+})
+
+test('full run', async () => {
+    let setupCount = 0
+    let teardownCount = 0
+
+    const pseudoFixture = new PseudoFixture<{
+        f1: string
+    }>({
+        f1: {
+            setup: async () => {
+                setupCount++
+                return ''
+            },
+            teardown: async () => {
+                teardownCount++
+            }
+        }
+    })
+
+    await pseudoFixture.run(async ({ f1: _f1 }) => {})
+    await pseudoFixture.fullRun(async ({ f1: _f1 }) => {})
+
+    expect(setupCount).toBe(2)
+    expect(teardownCount).toBe(2)
 })
 
 test('reset', async () => {

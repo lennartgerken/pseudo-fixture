@@ -185,7 +185,7 @@ test('Transaction workflow', async ({ runPseudoFixture }) => {
     )
 
     await pseudoFixtureUser1.run(async ({ transactionPage }) => {
-        return await transactionPage.continueAfterApproval(transactionID)
+        await transactionPage.continueAfterApproval(transactionID)
     })
 })
 

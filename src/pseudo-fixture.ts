@@ -64,6 +64,21 @@ export class PseudoFixture<Fixtures extends object> {
     }
 
     /**
+     * Prepares all fixtures required by the callback function and executes the callback with them.
+     * Before and after the callback the teardown is run.
+     * @param callback Function to run inside the PseudoFixture
+     * @returns Return value of the callback
+     */
+    async fullRun<T>(callback: (fixtures: Fixtures) => Promise<T>): Promise<T> {
+        await this.runTeardown()
+        try {
+            return await this.run(callback)
+        } finally {
+            await this.runTeardown()
+        }
+    }
+
+    /**
      * Runs all teardown functions of used fixtures.
      */
     async runTeardown() {
