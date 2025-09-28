@@ -8,9 +8,23 @@
 npm i -D pseudo-fixture
 ```
 
+## Basic Usage
+
+`PseudoFixture` requires one type that specifies the fixtures. Optionally, you can pass a second type that specifies the options. The constructor must include at least a setup function for each fixture parameter. These functions define how the fixtures are created. Optionally, a teardown function can also be defined for each fixture.\
+Each setup and teardown function can depend on other fixtures. Those dependencies are automatically prepared before the specific setup or teardown runs.\
+If an options type is specified, the constructor also requires default values for the options. After setup, you can use the different methods of `PseudoFixture` to run callback functions. These callbacks can use all fixtures and options as parameters. When fixtures are used in the parameters, they are prepared (if they weren’t already in a previous run) and passed to the callback.
+
+## Methods of PseudoFixture
+
+- **run(callback)**: Prepares all fixtures required by the callback function and executes the callback with them.
+
+- **fullRun(callback, options?)**: Prepares all fixtures required by the callback function and executes the callback with them. Before and after the callback the teardown is run.
+
+- **runTeardown()**: Runs all teardown functions of used fixtures.
+
 ## Example Usage in Playwright
 
-You can, for example, use `pseudo-fixture` in Playwright to create a fixture structure for working in multiple contexts:\
+You can for example use `pseudo-fixture` in Playwright to create a fixture structure for working in multiple contexts:\
 Suppose we have an application with a login page and a transaction page. Transactions can be created by users with the role `"basic"` but only approved by users with the role `"approver"`.
 We could create the following custom fixtures:\
 Define the types used for the `PseudoFixture`:
@@ -38,17 +52,12 @@ Define the types used for the custom Playwright fixtures:
 // Defines custom Playwright fixtures.
 type Fixtures = {
     createPseudoFixture: (
-        options?: PseudoOptions
-    ) => PseudoFixture<PseudoFixtures>
+        defaultOptions?: PseudoOptions
+    ) => PseudoFixture<PseudoFixtures, PseudoOptions>
     runPseudoFixture: <T>(
         callback: (fixtures: PseudoFixtures) => Promise<T>,
         options?: PseudoOptions
     ) => Promise<T>
-}
-
-// Defines custom Playwright options.
-type Options = {
-    defaultPseudoOptions: PseudoOptions
 }
 ```
 
@@ -56,81 +65,78 @@ Extend the Playwright test object with the custom fixtures and create the `Pseud
 
 ```ts
 // Extends Playwright test.
-export const test = base.extend<Fixtures & Options>({
-    defaultPseudoOptions: [
-        {
-            userData: { username: 'user1', password: 'password', role: 'basic' }
-        },
-        { option: true }
-    ],
-
+export const test = base.extend<Fixtures>({
     // Creates a function to generate new PseudoFixtures.
     // Every key of type PseudoFixtures needs a setup function to define how the data is created.
-    // Optionally, a teardown function can be defined.
-    createPseudoFixture: async ({ browser, defaultPseudoOptions }, use) => {
-        await use((options) => {
-            const optionsToUse = options || defaultPseudoOptions
-            return new PseudoFixture<PseudoFixtures>({
-                context: {
-                    setup: async () => {
-                        return await browser.newContext()
+    // Optionally a teardown function can be defined.
+    createPseudoFixture: async ({ browser }, use) => {
+        await use((defaultOptions) => {
+            return new PseudoFixture<PseudoFixtures, PseudoOptions>(
+                {
+                    context: {
+                        setup: async () => {
+                            return await browser.newContext()
+                        },
+                        teardown: async ({ context }) => {
+                            console.log('close context')
+                            await context.close()
+                        }
                     },
-                    teardown: async ({ context }) => {
-                        await context.close()
-                    }
-                },
-                page: {
-                    setup: async ({ context }) => {
-                        return await context.newPage()
-                    }
-                },
-                request: {
-                    setup: async ({ context }) => {
-                        return context.request
-                    }
-                },
-                user: {
-                    setup: async ({ request }) => {
-                        await createUser(request, optionsToUse.userData)
-                        return optionsToUse.userData
+                    page: {
+                        setup: async ({ context }) => {
+                            return await context.newPage()
+                        }
                     },
-                    teardown: async ({ request }) => {
-                        await deleteUser(
-                            request,
-                            optionsToUse.userData.username
-                        )
+                    request: {
+                        setup: async ({ context }) => {
+                            return context.request
+                        }
+                    },
+                    user: {
+                        setup: async ({ request, userData }) => {
+                            await createUser(request, userData)
+                            return userData
+                        },
+                        teardown: async ({ request, user }) => {
+                            await deleteUser(request, user.username)
+                        }
+                    },
+                    loginPage: {
+                        setup: async ({ page }) => {
+                            const loginPage = new LoginPage(page)
+                            await loginPage.goto()
+                            return loginPage
+                        }
+                    },
+                    transactionPage: {
+                        setup: async ({ user, page, loginPage }) => {
+                            await loginPage.login(user)
+                            return new TransactionPage(page)
+                        }
                     }
                 },
-                loginPage: {
-                    setup: async ({ page }) => {
-                        const loginPage = new LoginPage(page)
-                        await loginPage.goto()
-                        return loginPage
-                    }
-                },
-                transactionPage: {
-                    setup: async ({ page, loginPage, user }) => {
-                        await loginPage.login(user)
-                        return new TransactionPage(page)
+                defaultOptions || {
+                    userData: {
+                        username: 'user1',
+                        password: 'password',
+                        role: 'basic'
                     }
                 }
-            })
+            )
         })
     },
 
-    // Creates a function to instantiate a PseudoFixture, run a callback, and then handle teardown.
+    // Creates a function that uses the fullRun method of PseudoFixture to run the callback and the teardown with the specified options.
     runPseudoFixture: async ({ createPseudoFixture }, use) => {
         await use(async (callback, options) => {
-            const pseudoFixture = createPseudoFixture(options)
-            const callbackValue = await pseudoFixture.run(callback)
-            await pseudoFixture.runTeardown()
-            return callbackValue
+            const pseudoFixture = createPseudoFixture()
+            return await pseudoFixture.fullRun(callback, options)
         })
     }
 })
 ```
 
-Now we can use the `PseudoFixture` inside our test functions. For example, we could have a testcase where we create a transaction with our default user with role `"basic"` and after that approve the transaction with a second user with role `"approver"`. The creation of the users and the navigation is handled in the `PseudoFixture`.
+Now we can use the `PseudoFixture` inside our test functions. For example, we could have a test case where we create a transaction with our default user with role `"basic"` and after that approve the transaction with a second user with role `"approver"`. The creation of the users and the navigation is handled in the `PseudoFixture`.
 
 ```ts
 test('Transaction workflow', async ({ runPseudoFixture }) => {
@@ -185,7 +191,7 @@ test('Transaction workflow', async ({ runPseudoFixture }) => {
     )
 
     await pseudoFixtureUser1.run(async ({ transactionPage }) => {
-        return await transactionPage.continueAfterApproval(transactionID)
+        await transactionPage.continueAfterApproval(transactionID)
     })
 })
 

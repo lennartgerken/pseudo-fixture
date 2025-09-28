@@ -36,6 +36,26 @@ describe('run', () => {
         expect(actual).toBe(f1Value + f2Value)
     })
 
+    test('reuse fixture', async () => {
+        let setupCount = 0
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: number
+        }>({
+            f1: {
+                setup: async () => {
+                    setupCount++
+                    return setupCount
+                }
+            }
+        })
+
+        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+
+        expect(setupCount).toBe(1)
+    })
+
     test('use circular fixtures', async () => {
         const pseudoFixture = new PseudoFixture<{ f1: string; f2: string }>({
             f1: {
@@ -166,6 +186,31 @@ describe('teardown', () => {
     })
 })
 
+test('full run', async () => {
+    let setupCount = 0
+    let teardownCount = 0
+
+    const pseudoFixture = new PseudoFixture<{
+        f1: string
+    }>({
+        f1: {
+            setup: async () => {
+                setupCount++
+                return ''
+            },
+            teardown: async () => {
+                teardownCount++
+            }
+        }
+    })
+
+    await pseudoFixture.run(async ({ f1: _f1 }) => {})
+    await pseudoFixture.fullRun(async ({ f1: _f1 }) => {})
+
+    expect(setupCount).toBe(2)
+    expect(teardownCount).toBe(2)
+})
+
 test('reset', async () => {
     let setupCounter = 0
 
@@ -185,4 +230,43 @@ test('reset', async () => {
     await pseudoFixture.run(async ({ f1: _f1 }) => {})
 
     expect(setupCounter).toBe(2)
+})
+
+test('options', async () => {
+    const o1Default = 'o1'
+    const o2Default = 'o2'
+    const o1Edit = 'o1.1'
+
+    const pseudoFixture = new PseudoFixture<
+        {
+            f1: string
+        },
+        { o1: string; o2: string }
+    >(
+        {
+            f1: {
+                setup: async ({ o1, o2 }) => {
+                    return o1 + o2
+                }
+            }
+        },
+        { o1: o1Default, o2: o2Default }
+    )
+
+    expect(
+        await pseudoFixture.run(async ({ f1 }) => {
+            return f1
+        })
+    ).toBe(o1Default + o2Default)
+
+    expect(
+        await pseudoFixture.fullRun(
+            async ({ f1 }) => {
+                return f1
+            },
+            {
+                o1: o1Edit
+            }
+        )
+    ).toBe(o1Edit + o2Default)
 })
