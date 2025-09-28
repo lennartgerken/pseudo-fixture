@@ -7,19 +7,19 @@ type Definitions<Fixtures, Options extends object> = {
     }
 }
 
-type IsExactly<T, U> = [T] extends [U]
-    ? [U] extends [T]
+type IsSameType<Type1, Type2> = [Type1] extends [Type2]
+    ? [Type2] extends [Type1]
         ? true
         : false
     : false
 
 type ConstructorArgs<Fixtures, Options extends object = object> =
-    IsExactly<Options, object> extends true
+    IsSameType<Options, object> extends true
         ? [definitions: Definitions<Fixtures, Options>]
-        : [definitions: Definitions<Fixtures, Options>, options: Options]
+        : [definitions: Definitions<Fixtures, Options>, defaultOptions: Options]
 
 type FullRunArgs<Fixtures, Return, Options extends object = object> =
-    IsExactly<Options, object> extends true
+    IsSameType<Options, object> extends true
         ? [callback: (fixtures: Fixtures & Options) => Promise<Return>]
         : [
               callback: (fixtures: Fixtures & Options) => Promise<Return>,
@@ -31,7 +31,7 @@ export class PseudoFixture<
     Options extends object = object
 > {
     protected definitions: Definitions<Fixtures, Options>
-    protected options: Options
+    protected defaultOptions: Options
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readyFixtures: any
     protected teardownsToRun: ((
@@ -46,8 +46,8 @@ export class PseudoFixture<
      */
     constructor(...args: ConstructorArgs<Fixtures, Options>) {
         this.definitions = args[0]
-        this.options = (args[1] as Options) ?? {}
-        this.readyFixtures = { ...this.options }
+        this.defaultOptions = (args[1] as Options) ?? {}
+        this.readyFixtures = { ...this.defaultOptions }
         this.teardownsToRun = []
         this.waitForPreparation = new Set()
     }
@@ -113,8 +113,8 @@ export class PseudoFixture<
      */
     async fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
         await this.runTeardown()
-        const options = (args[1] as Options) ?? this.options
-        this.readyFixtures = { ...this.options, ...options }
+        const options = (args[1] as Options) ?? this.defaultOptions
+        this.readyFixtures = { ...this.defaultOptions, ...options }
         try {
             return await this.run(args[0])
         } finally {
@@ -129,7 +129,7 @@ export class PseudoFixture<
         for (const current of this.teardownsToRun)
             await current(this.readyFixtures)
 
-        this.readyFixtures = { ...this.options }
+        this.readyFixtures = { ...this.defaultOptions }
         this.teardownsToRun = []
         this.waitForPreparation.clear()
     }
