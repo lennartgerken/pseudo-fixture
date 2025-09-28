@@ -23,7 +23,7 @@ type FullRunArgs<Fixtures, Return, Options extends object = object> =
         ? [callback: (fixtures: Fixtures & Options) => Promise<Return>]
         : [
               callback: (fixtures: Fixtures & Options) => Promise<Return>,
-              options?: Options
+              options?: { [Key in keyof Options]?: Options[Key] }
           ]
 
 export class PseudoFixture<
@@ -112,7 +112,7 @@ export class PseudoFixture<
     async fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
         await this.runTeardown()
         const options = (args[1] as Options) ?? this.options
-        this.readyFixtures = { ...options }
+        this.readyFixtures = { ...this.options, ...options }
         try {
             return await this.run(args[0])
         } finally {
