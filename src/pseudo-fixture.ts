@@ -41,7 +41,8 @@ export class PseudoFixture<
 
     /**
      * Creates a PseudoFixture.
-     * @param definitions Defines how the fixtures are created.
+     * @param args[0] Defines how the fixtures are created.
+     * @param args[1] Default options.
      */
     constructor(...args: ConstructorArgs<Fixtures, Options>) {
         this.definitions = args[0]
@@ -106,7 +107,8 @@ export class PseudoFixture<
     /**
      * Prepares all fixtures required by the callback function and executes the callback with them.
      * Before and after the callback the teardown is run.
-     * @param callback Function to run inside the PseudoFixture
+     * @param args[0] Function to run inside the PseudoFixture.
+     * @param args[1] Override default options.
      * @returns Return value of the callback
      */
     async fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
