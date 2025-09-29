@@ -10,7 +10,7 @@ npm i -D pseudo-fixture
 
 ## Basic Usage
 
-`PseudoFixture` requires one type that specifies the fixtures. Optionally, you can pass a second type that specifies the options. The constructor must include at least a setup function for each fixture parameter. These functions define how the fixtures are created. Optionally, a teardown function can also be defined for each fixture.\
+`PseudoFixture` requires one type that specifies the fixtures. Optionally, you can pass a second type that specifies the options. The constructor requires a setup function for each fixture parameter. These functions define how the fixtures are created. Optionally, a teardown function can also be defined for each fixture.\
 Each setup and teardown function can depend on other fixtures. Those dependencies are automatically prepared before the specific setup or teardown runs.\
 If an options type is specified, the constructor also requires default values for the options. After setup, you can use the different methods of `PseudoFixture` to run callback functions. These callbacks can use all fixtures and options as parameters. When fixtures are used in the parameters, they are prepared (if they weren’t already in a previous run) and passed to the callback.
 
