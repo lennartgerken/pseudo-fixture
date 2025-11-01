@@ -67,7 +67,10 @@ export class PseudoFixture<
             if (
                 definition &&
                 definition.setup &&
-                this.readyFixtures[fixtureName] === undefined &&
+                !Object.prototype.hasOwnProperty.call(
+                    this.readyFixtures,
+                    fixtureName
+                ) &&
                 !this.waitForPreparation.has(fixtureName)
             ) {
                 this.waitForPreparation.add(fixtureName)
