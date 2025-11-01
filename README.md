@@ -78,7 +78,6 @@ export const test = base.extend<Fixtures>({
                             return await browser.newContext()
                         },
                         teardown: async ({ context }) => {
-                            console.log('close context')
                             await context.close()
                         }
                     },

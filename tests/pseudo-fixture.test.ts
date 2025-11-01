@@ -270,3 +270,26 @@ test('options', async () => {
         )
     ).toBe(o1Edit + o2Default)
 })
+
+test('undefined return from setup', async () => {
+    let setupCalls = 0
+
+    const pseudoFixture = new PseudoFixture<{ a: undefined }>({
+        a: {
+            setup: async () => {
+                setupCalls++
+                return undefined
+            }
+        }
+    })
+
+    await pseudoFixture.run(async ({ a }) => {
+        expect(a).toBeUndefined()
+    })
+
+    await pseudoFixture.run(async ({ a }) => {
+        expect(a).toBeUndefined()
+    })
+
+    expect(setupCalls).toBe(1)
+})
