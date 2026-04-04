@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest'
-import { PseudoFixture } from '../src/index'
+import { PseudoFixture } from '../dist/index'
 
 describe('run', () => {
     test('use fixtures', async () => {

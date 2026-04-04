@@ -1,18 +1,20 @@
 import typescript from '@rollup/plugin-typescript'
 
+const external = ['acorn']
+
 export default [
     {
         input: 'src/index.ts',
         output: {
-            file: 'dist/esm/index.js',
+            file: 'dist/index.js',
             format: 'es'
         },
-        external: ['acorn'],
+        external,
         plugins: [
             typescript({
                 compilerOptions: {
                     declaration: true,
-                    declarationDir: 'dist/esm'
+                    declarationDir: 'dist'
                 }
             })
         ]
@@ -20,10 +22,10 @@ export default [
     {
         input: 'src/index.ts',
         output: {
-            file: 'dist/cjs/index.cjs',
+            file: 'dist/index.cjs',
             format: 'cjs'
         },
-        external: ['acorn'],
+        external,
         plugins: [typescript()]
     }
 ]
