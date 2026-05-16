@@ -201,7 +201,7 @@ test.afterEach(async () => {
 })
 ```
 
-`PseudoFixture` objects are async disposables. If a `PseudoFixture` is only used within a single test, it can be created with await using to automatically run `teardown` when the object goes out of scope:
+`PseudoFixture` objects are async disposables. If a `PseudoFixture` is only used within a single test, it can be created with `await using` to automatically run `teardown` when the object goes out of scope:
 
 ```ts
 test('Transaction workflow', async ({
