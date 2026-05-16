@@ -10,9 +10,11 @@ npm i -D pseudo-fixture
 
 ## Basic Usage
 
-`PseudoFixture` requires one type that specifies the fixtures. Optionally, you can pass a second type that specifies the options. The constructor requires a setup function for each fixture parameter. These functions define how the fixtures are created. Optionally, a teardown function can also be defined for each fixture.\
-Each setup and teardown function can depend on other fixtures. Those dependencies are automatically prepared before the specific setup or teardown runs.\
-If an options type is specified, the constructor also requires default values for the options. After setup, you can use the different methods of `PseudoFixture` to run callback functions. These callbacks can use all fixtures and options as parameters. When fixtures are used in the parameters, they are prepared (if they weren’t already in a previous run) and passed to the callback.
+`PseudoFixture` takes a fixtures type and optionally an options type.
+You define how each fixture is created with setup functions and can optionally add teardown functions.
+Setup and teardown functions can depend on other fixtures. Dependencies are handled automatically.
+If you use options, you also provide default option values.
+You can then run callbacks through `PseudoFixture`. Any fixtures used by the callback are automatically prepared and passed in.
 
 ## Methods of PseudoFixture
 
@@ -196,6 +198,40 @@ test('Transaction workflow', async ({ runPseudoFixture }) => {
 
 test.afterEach(async () => {
     await pseudoFixtureUser1.runTeardown()
+})
+```
+
+`PseudoFixture` objects are async disposables. If a `PseudoFixture` is only used within a single test, it can be created with await using to automatically run `teardown` when the object goes out of scope:
+
+```ts
+test('Transaction workflow', async ({
+    createPseudoFixture,
+    runPseudoFixture
+}) => {
+    await using pseudoFixtureUser1 = createPseudoFixture()
+
+    const transactionID = await pseudoFixtureUser1.run(
+        async ({ transactionPage }) => {
+            return await transactionPage.createTransaction()
+        }
+    )
+
+    await runPseudoFixture(
+        async ({ transactionPage }) => {
+            await transactionPage.approveTransaction(transactionID)
+        },
+        {
+            userData: {
+                username: 'user2',
+                password: 'password',
+                role: 'approver'
+            }
+        }
+    )
+
+    await pseudoFixtureUser1.run(async ({ transactionPage }) => {
+        await transactionPage.continueAfterApproval(transactionID)
+    })
 })
 ```
 
