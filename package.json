@@ -17,6 +17,9 @@
     "bugs": {
         "url": "https://github.com/lennartgerken/pseudo-fixture/issues"
     },
+    "engines": {
+        "node": ">=20.4.0"
+    },
     "type": "module",
     "types": "./dist/index.d.ts",
     "exports": {
