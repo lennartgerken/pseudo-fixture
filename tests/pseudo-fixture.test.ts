@@ -184,6 +184,29 @@ describe('teardown', () => {
 
         expect(actualOrder).toEqual(exptectedOrder)
     })
+
+    test('await using', async () => {
+        let teardownRun = false
+
+        {
+            await using pseudoFixture = new PseudoFixture<{
+                f1: string
+            }>({
+                f1: {
+                    setup: async () => {
+                        return 'F1'
+                    },
+                    teardown: async () => {
+                        teardownRun = true
+                    }
+                }
+            })
+
+            await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        }
+
+        expect(teardownRun).toBeTruthy()
+    })
 })
 
 test('full run', async () => {

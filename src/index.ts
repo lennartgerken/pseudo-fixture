@@ -173,4 +173,8 @@ export class PseudoFixture<
         this.teardownsToRun = []
         this.waitForPreparation.clear()
     }
+
+    async [Symbol.asyncDispose]() {
+        await this.runTeardown()
+    }
 }

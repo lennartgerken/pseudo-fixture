@@ -2,7 +2,8 @@
     "compilerOptions": {
         "module": "esnext",
         "moduleResolution": "bundler",
-        "target": "es2020",
+        "target": "es2022",
+        "lib": ["es2022", "ESNext.Disposable"],
         "rootDir": "src",
         "outDir": "dist",
         "strict": true,
