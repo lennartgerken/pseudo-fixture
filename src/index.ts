@@ -1,10 +1,20 @@
 import * as acorn from 'acorn'
 
+type Setup<Fixtures, Options extends object, Key extends keyof Fixtures> = (
+    fixtures: Fixtures & Options
+) => Promise<Fixtures[Key]> | Fixtures[Key]
+
+type Teardown<Fixtures, Options extends object> = (
+    fixtures: Fixtures & Options
+) => Promise<void> | void
+
 type Definitions<Fixtures, Options extends object> = {
-    [Key in keyof Fixtures]: {
-        setup: (fixtures: Fixtures & Options) => Promise<Fixtures[Key]>
-        teardown?: (fixtures: Fixtures & Options) => Promise<void>
-    }
+    [Key in keyof Fixtures]:
+        | {
+              setup: Setup<Fixtures, Options, Key>
+              teardown?: Teardown<Fixtures, Options>
+          }
+        | Setup<Fixtures, Options, Key>
 }
 
 type IsSameType<Type1, Type2> = [Type1] extends [Type2]
@@ -71,9 +81,7 @@ export class PseudoFixture<
     protected defaultOptions: Options
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readyFixtures: any
-    protected teardownsToRun: ((
-        fixtures: Fixtures & Options
-    ) => Promise<void>)[]
+    protected teardownsToRun: Teardown<Fixtures, Options>[]
     protected waitForPreparation: Set<keyof Definitions<Fixtures, Options>>
 
     /**
@@ -99,11 +107,16 @@ export class PseudoFixture<
         }
 
         if (isDefinitionsKey(fixtureName)) {
+            const isSetupFunction = (
+                definition: Definitions<Fixtures, Options>[keyof Fixtures]
+            ): definition is Setup<Fixtures, Options, keyof Fixtures> => {
+                return typeof definition === 'function'
+            }
+
             const definition = this.definitions[fixtureName]
 
             if (
                 definition &&
-                definition.setup &&
                 !Object.prototype.hasOwnProperty.call(
                     this.readyFixtures,
                     fixtureName
@@ -112,8 +125,12 @@ export class PseudoFixture<
             ) {
                 this.waitForPreparation.add(fixtureName)
 
-                const setup = definition.setup
-                const teardown = definition.teardown
+                const setup = isSetupFunction(definition)
+                    ? definition
+                    : definition.setup
+                const teardown = !isSetupFunction(definition)
+                    ? definition.teardown
+                    : undefined
 
                 let params = exportParams(setup)
                 if (teardown) params = params.concat(exportParams(teardown))
@@ -141,7 +158,7 @@ export class PseudoFixture<
         for (const param of exportParams(callback))
             await this.prepareFixture(param)
 
-        return await callback(this.readyFixtures)
+        return callback(this.readyFixtures)
     }
 
     /**
@@ -156,7 +173,7 @@ export class PseudoFixture<
         const options = (args[1] as Options) ?? this.defaultOptions
         this.readyFixtures = { ...this.defaultOptions, ...options }
         try {
-            return await this.run(args[0])
+            return this.run(args[0])
         } finally {
             await this.runTeardown()
         }
