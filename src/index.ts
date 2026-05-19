@@ -173,7 +173,7 @@ export class PseudoFixture<
         const options = (args[1] as Options) ?? this.defaultOptions
         this.readyFixtures = { ...this.defaultOptions, ...options }
         try {
-            return this.run(args[0])
+            return await this.run(args[0])
         } finally {
             await this.runTeardown()
         }
