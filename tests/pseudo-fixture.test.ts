@@ -209,6 +209,29 @@ describe('teardown', () => {
     })
 })
 
+test('simple setup', async () => {
+    const f1Value = 'f1'
+    const f2Value = 'f2'
+
+    const pseudoFixture = new PseudoFixture<{
+        f1: string
+        f2: string
+    }>({
+        f1: ({ f2 }) => {
+            return f1Value + f2
+        },
+        f2: async () => {
+            return f2Value
+        }
+    })
+
+    const actual = await pseudoFixture.run(async ({ f1 }) => {
+        return f1
+    })
+
+    expect(actual).toBe(f1Value + f2Value)
+})
+
 test('full run', async () => {
     let setupCount = 0
     let teardownCount = 0
