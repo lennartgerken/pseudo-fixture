@@ -77,7 +77,7 @@ export const test = base.extend<Fixtures>({
                 {
                     context: {
                         setup: () => browser.newContext(),
-                        teardown: async ({ context }) => context.close()
+                        teardown: ({ context }) => context.close()
                     },
                     page: ({ context }) => context.newPage(),
                     request: ({ context }) => context.request,
@@ -86,7 +86,7 @@ export const test = base.extend<Fixtures>({
                             await createUser(request, userData)
                             return userData
                         },
-                        teardown: async ({ request, user }) =>
+                        teardown: ({ request, user }) =>
                             deleteUser(request, user.username)
                     },
                     loginPage: async ({ page }) => {
@@ -112,9 +112,9 @@ export const test = base.extend<Fixtures>({
 
     // Creates a function that uses the fullRun method of PseudoFixture to run the callback and the teardown with the specified options.
     runPseudoFixture: async ({ createPseudoFixture }, use) => {
-        await use(async (callback, options) => {
+        await use((callback, options) => {
             const pseudoFixture = createPseudoFixture()
-            return await pseudoFixture.fullRun(callback, options)
+            return pseudoFixture.fullRun(callback, options)
         })
     }
 })
@@ -124,16 +124,13 @@ Now we can use the `PseudoFixture` inside our test functions. For example, we co
 
 ```ts
 test('Transaction workflow', async ({ runPseudoFixture }) => {
-    const transactionID = await runPseudoFixture(
-        async ({ transactionPage }) => {
-            return await transactionPage.createTransaction()
-        }
+    const transactionID = await runPseudoFixture(({ transactionPage }) =>
+        transactionPage.createTransaction()
     )
 
     await runPseudoFixture(
-        async ({ transactionPage }) => {
-            await transactionPage.approveTransaction(transactionID)
-        },
+        ({ transactionPage }) =>
+            transactionPage.approveTransaction(transactionID),
         {
             userData: {
                 username: 'user2',
@@ -155,16 +152,13 @@ test.beforeEach(({ createPseudoFixture }) => {
 })
 
 test('Transaction workflow', async ({ runPseudoFixture }) => {
-    const transactionID = await pseudoFixtureUser1.run(
-        async ({ transactionPage }) => {
-            return await transactionPage.createTransaction()
-        }
+    const transactionID = await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.createTransaction()
     )
 
     await runPseudoFixture(
-        async ({ transactionPage }) => {
-            await transactionPage.approveTransaction(transactionID)
-        },
+        ({ transactionPage }) =>
+            transactionPage.approveTransaction(transactionID),
         {
             userData: {
                 username: 'user2',
@@ -174,14 +168,12 @@ test('Transaction workflow', async ({ runPseudoFixture }) => {
         }
     )
 
-    await pseudoFixtureUser1.run(async ({ transactionPage }) => {
-        await transactionPage.continueAfterApproval(transactionID)
-    })
+    await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.continueAfterApproval(transactionID)
+    )
 })
 
-test.afterEach(async () => {
-    await pseudoFixtureUser1.runTeardown()
-})
+test.afterEach(() => pseudoFixtureUser1.runTeardown())
 ```
 
 `PseudoFixture` objects are async disposables. If a `PseudoFixture` is only used within a single test, it can be created with `await using` to automatically run `teardown` when the object goes out of scope:
@@ -193,16 +185,13 @@ test('Transaction workflow', async ({
 }) => {
     await using pseudoFixtureUser1 = createPseudoFixture()
 
-    const transactionID = await pseudoFixtureUser1.run(
-        async ({ transactionPage }) => {
-            return await transactionPage.createTransaction()
-        }
+    const transactionID = await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.createTransaction()
     )
 
     await runPseudoFixture(
-        async ({ transactionPage }) => {
-            await transactionPage.approveTransaction(transactionID)
-        },
+        ({ transactionPage }) =>
+            transactionPage.approveTransaction(transactionID),
         {
             userData: {
                 username: 'user2',
@@ -212,9 +201,9 @@ test('Transaction workflow', async ({
         }
     )
 
-    await pseudoFixtureUser1.run(async ({ transactionPage }) => {
-        await transactionPage.continueAfterApproval(transactionID)
-    })
+    await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.continueAfterApproval(transactionID)
+    )
 })
 ```
 
