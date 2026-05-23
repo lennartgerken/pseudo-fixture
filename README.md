@@ -76,44 +76,27 @@ export const test = base.extend<Fixtures>({
             return new PseudoFixture<PseudoFixtures, PseudoOptions>(
                 {
                     context: {
-                        setup: async () => {
-                            return await browser.newContext()
-                        },
-                        teardown: async ({ context }) => {
-                            await context.close()
-                        }
+                        setup: () => browser.newContext(),
+                        teardown: ({ context }) => context.close()
                     },
-                    page: {
-                        setup: async ({ context }) => {
-                            return await context.newPage()
-                        }
-                    },
-                    request: {
-                        setup: async ({ context }) => {
-                            return context.request
-                        }
-                    },
+                    page: ({ context }) => context.newPage(),
+                    request: ({ context }) => context.request,
                     user: {
                         setup: async ({ request, userData }) => {
                             await createUser(request, userData)
                             return userData
                         },
-                        teardown: async ({ request, user }) => {
-                            await deleteUser(request, user.username)
-                        }
+                        teardown: ({ request, user }) =>
+                            deleteUser(request, user.username)
                     },
-                    loginPage: {
-                        setup: async ({ page }) => {
-                            const loginPage = new LoginPage(page)
-                            await loginPage.goto()
-                            return loginPage
-                        }
+                    loginPage: async ({ page }) => {
+                        const loginPage = new LoginPage(page)
+                        await loginPage.goto()
+                        return loginPage
                     },
-                    transactionPage: {
-                        setup: async ({ user, page, loginPage }) => {
-                            await loginPage.login(user)
-                            return new TransactionPage(page)
-                        }
+                    transactionPage: async ({ user, page, loginPage }) => {
+                        await loginPage.login(user)
+                        return new TransactionPage(page)
                     }
                 },
                 defaultOptions || {
@@ -129,9 +112,9 @@ export const test = base.extend<Fixtures>({
 
     // Creates a function that uses the fullRun method of PseudoFixture to run the callback and the teardown with the specified options.
     runPseudoFixture: async ({ createPseudoFixture }, use) => {
-        await use(async (callback, options) => {
+        await use((callback, options) => {
             const pseudoFixture = createPseudoFixture()
-            return await pseudoFixture.fullRun(callback, options)
+            return pseudoFixture.fullRun(callback, options)
         })
     }
 })
@@ -141,16 +124,13 @@ Now we can use the `PseudoFixture` inside our test functions. For example, we co
 
 ```ts
 test('Transaction workflow', async ({ runPseudoFixture }) => {
-    const transactionID = await runPseudoFixture(
-        async ({ transactionPage }) => {
-            return await transactionPage.createTransaction()
-        }
+    const transactionID = await runPseudoFixture(({ transactionPage }) =>
+        transactionPage.createTransaction()
     )
 
     await runPseudoFixture(
-        async ({ transactionPage }) => {
-            await transactionPage.approveTransaction(transactionID)
-        },
+        ({ transactionPage }) =>
+            transactionPage.approveTransaction(transactionID),
         {
             userData: {
                 username: 'user2',
@@ -172,16 +152,13 @@ test.beforeEach(({ createPseudoFixture }) => {
 })
 
 test('Transaction workflow', async ({ runPseudoFixture }) => {
-    const transactionID = await pseudoFixtureUser1.run(
-        async ({ transactionPage }) => {
-            return await transactionPage.createTransaction()
-        }
+    const transactionID = await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.createTransaction()
     )
 
     await runPseudoFixture(
-        async ({ transactionPage }) => {
-            await transactionPage.approveTransaction(transactionID)
-        },
+        ({ transactionPage }) =>
+            transactionPage.approveTransaction(transactionID),
         {
             userData: {
                 username: 'user2',
@@ -191,14 +168,12 @@ test('Transaction workflow', async ({ runPseudoFixture }) => {
         }
     )
 
-    await pseudoFixtureUser1.run(async ({ transactionPage }) => {
-        await transactionPage.continueAfterApproval(transactionID)
-    })
+    await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.continueAfterApproval(transactionID)
+    )
 })
 
-test.afterEach(async () => {
-    await pseudoFixtureUser1.runTeardown()
-})
+test.afterEach(() => pseudoFixtureUser1.runTeardown())
 ```
 
 `PseudoFixture` objects are async disposables. If a `PseudoFixture` is only used within a single test, it can be created with `await using` to automatically run `teardown` when the object goes out of scope:
@@ -210,16 +185,13 @@ test('Transaction workflow', async ({
 }) => {
     await using pseudoFixtureUser1 = createPseudoFixture()
 
-    const transactionID = await pseudoFixtureUser1.run(
-        async ({ transactionPage }) => {
-            return await transactionPage.createTransaction()
-        }
+    const transactionID = await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.createTransaction()
     )
 
     await runPseudoFixture(
-        async ({ transactionPage }) => {
-            await transactionPage.approveTransaction(transactionID)
-        },
+        ({ transactionPage }) =>
+            transactionPage.approveTransaction(transactionID),
         {
             userData: {
                 username: 'user2',
@@ -229,9 +201,9 @@ test('Transaction workflow', async ({
         }
     )
 
-    await pseudoFixtureUser1.run(async ({ transactionPage }) => {
-        await transactionPage.continueAfterApproval(transactionID)
-    })
+    await pseudoFixtureUser1.run(({ transactionPage }) =>
+        transactionPage.continueAfterApproval(transactionID)
+    )
 })
 ```
 
