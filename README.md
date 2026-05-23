@@ -76,44 +76,27 @@ export const test = base.extend<Fixtures>({
             return new PseudoFixture<PseudoFixtures, PseudoOptions>(
                 {
                     context: {
-                        setup: async () => {
-                            return await browser.newContext()
-                        },
-                        teardown: async ({ context }) => {
-                            await context.close()
-                        }
+                        setup: () => browser.newContext(),
+                        teardown: async ({ context }) => context.close()
                     },
-                    page: {
-                        setup: async ({ context }) => {
-                            return await context.newPage()
-                        }
-                    },
-                    request: {
-                        setup: async ({ context }) => {
-                            return context.request
-                        }
-                    },
+                    page: ({ context }) => context.newPage(),
+                    request: ({ context }) => context.request,
                     user: {
                         setup: async ({ request, userData }) => {
                             await createUser(request, userData)
                             return userData
                         },
-                        teardown: async ({ request, user }) => {
-                            await deleteUser(request, user.username)
-                        }
+                        teardown: async ({ request, user }) =>
+                            deleteUser(request, user.username)
                     },
-                    loginPage: {
-                        setup: async ({ page }) => {
-                            const loginPage = new LoginPage(page)
-                            await loginPage.goto()
-                            return loginPage
-                        }
+                    loginPage: async ({ page }) => {
+                        const loginPage = new LoginPage(page)
+                        await loginPage.goto()
+                        return loginPage
                     },
-                    transactionPage: {
-                        setup: async ({ user, page, loginPage }) => {
-                            await loginPage.login(user)
-                            return new TransactionPage(page)
-                        }
+                    transactionPage: async ({ user, page, loginPage }) => {
+                        await loginPage.login(user)
+                        return new TransactionPage(page)
                     }
                 },
                 defaultOptions || {
