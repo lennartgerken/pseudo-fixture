@@ -30,9 +30,11 @@ type ConstructorArgs<Fixtures, Options extends object = object> =
 
 type FullRunArgs<Fixtures, Return, Options extends object = object> =
     IsSameType<Options, object> extends true
-        ? [callback: (fixtures: Fixtures & Options) => Promise<Return>]
+        ? [callback: (fixtures: Fixtures & Options) => Promise<Return> | Return]
         : [
-              callback: (fixtures: Fixtures & Options) => Promise<Return>,
+              callback: (
+                  fixtures: Fixtures & Options
+              ) => Promise<Return> | Return,
               options?: { [Key in keyof Options]?: Options[Key] }
           ]
 
@@ -153,7 +155,7 @@ export class PseudoFixture<
      * @returns Return value of the callback
      */
     async run<T>(
-        callback: (fixtures: Fixtures & Options) => Promise<T>
+        callback: (fixtures: Fixtures & Options) => Promise<T> | T
     ): Promise<T> {
         for (const param of exportParams(callback))
             await this.prepareFixture(param)

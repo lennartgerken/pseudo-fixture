@@ -12,24 +12,24 @@ describe('run', () => {
             f3: string
         }>({
             f1: {
-                setup: async ({ f2 }) => {
+                setup: ({ f2 }) => {
                     return f1Value + f2
                 }
             },
             f2: {
-                setup: async () => {
+                setup: () => {
                     return f2Value
                 }
             },
             f3: {
-                setup: async () => {
+                setup: () => {
                     expect.fail()
                     return 'f3'
                 }
             }
         })
 
-        const actual = await pseudoFixture.run(async ({ f1 }) => {
+        const actual = await pseudoFixture.run(({ f1 }) => {
             return f1
         })
 
@@ -43,15 +43,15 @@ describe('run', () => {
             f1: number
         }>({
             f1: {
-                setup: async () => {
+                setup: () => {
                     setupCount++
                     return setupCount
                 }
             }
         })
 
-        await pseudoFixture.run(async ({ f1: _f1 }) => {})
-        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        await pseudoFixture.run(({ f1: _f1 }) => {})
+        await pseudoFixture.run(({ f1: _f1 }) => {})
 
         expect(setupCount).toBe(1)
     })
@@ -59,18 +59,18 @@ describe('run', () => {
     test('use circular fixtures', async () => {
         const pseudoFixture = new PseudoFixture<{ f1: string; f2: string }>({
             f1: {
-                setup: async ({ f2 }) => {
+                setup: ({ f2 }) => {
                     return f2
                 }
             },
             f2: {
-                setup: async ({ f1 }) => {
+                setup: ({ f1 }) => {
                     return f1
                 }
             }
         })
 
-        const actual = await pseudoFixture.run(async ({ f1 }) => {
+        const actual = await pseudoFixture.run(({ f1 }) => {
             return f1
         })
 
@@ -93,32 +93,32 @@ describe('teardown', () => {
             f3: string
         }>({
             f1: {
-                setup: async () => {
+                setup: () => {
                     return f1Value
                 },
-                teardown: async ({ f1, f3 }) => {
+                teardown: ({ f1, f3 }) => {
                     actual = f1 + f3 + f1TeardownValue
                 }
             },
             f2: {
-                setup: async () => {
+                setup: () => {
                     return 'f2'
                 },
-                teardown: async () => {
+                teardown: () => {
                     expect.fail()
                 }
             },
             f3: {
-                setup: async () => {
+                setup: () => {
                     return f3Value
                 },
-                teardown: async () => {
+                teardown: () => {
                     f3TeardownRun = true
                 }
             }
         })
 
-        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        await pseudoFixture.run(({ f1: _f1 }) => {})
         await pseudoFixture.runTeardown()
 
         expect(actual).toBe(f1Value + f3Value + f1TeardownValue)
@@ -146,40 +146,40 @@ describe('teardown', () => {
             f4: string
         }>({
             f1: {
-                setup: async ({ f2: _f2, f3: _f3 }) => {
+                setup: ({ f2: _f2, f3: _f3 }) => {
                     return ''
                 },
-                teardown: async () => {
+                teardown: () => {
                     actualOrder.push(f1TeardownValue)
                 }
             },
             f2: {
-                setup: async () => {
+                setup: () => {
                     return ''
                 },
-                teardown: async ({ f4: _f4 }) => {
+                teardown: ({ f4: _f4 }) => {
                     actualOrder.push(f2TeardownValue)
                 }
             },
             f3: {
-                setup: async () => {
+                setup: () => {
                     return ''
                 },
-                teardown: async ({ f4: _f4 }) => {
+                teardown: ({ f4: _f4 }) => {
                     actualOrder.push(f3TeardownValue)
                 }
             },
             f4: {
-                setup: async () => {
+                setup: () => {
                     return ''
                 },
-                teardown: async () => {
+                teardown: () => {
                     actualOrder.push(f4TeardownValue)
                 }
             }
         })
 
-        await pseudoFixture.run(async ({ f1: _f1 }) => {})
+        await pseudoFixture.run(({ f1: _f1 }) => {})
         await pseudoFixture.runTeardown()
 
         expect(actualOrder).toEqual(exptectedOrder)
@@ -193,16 +193,16 @@ describe('teardown', () => {
                 f1: string
             }>({
                 f1: {
-                    setup: async () => {
+                    setup: () => {
                         return 'F1'
                     },
-                    teardown: async () => {
+                    teardown: () => {
                         teardownRun = true
                     }
                 }
             })
 
-            await pseudoFixture.run(async ({ f1: _f1 }) => {})
+            await pseudoFixture.run(({ f1: _f1 }) => {})
         }
 
         expect(teardownRun).toBeTruthy()
@@ -220,12 +220,12 @@ test('simple setup', async () => {
         f1: ({ f2 }) => {
             return f1Value + f2
         },
-        f2: async () => {
+        f2: () => {
             return f2Value
         }
     })
 
-    const actual = await pseudoFixture.run(async ({ f1 }) => {
+    const actual = await pseudoFixture.run(({ f1 }) => {
         return f1
     })
 
@@ -240,18 +240,18 @@ test('full run', async () => {
         f1: string
     }>({
         f1: {
-            setup: async () => {
+            setup: () => {
                 setupCount++
                 return ''
             },
-            teardown: async () => {
+            teardown: () => {
                 teardownCount++
             }
         }
     })
 
-    await pseudoFixture.run(async ({ f1: _f1 }) => {})
-    await pseudoFixture.fullRun(async ({ f1: _f1 }) => {})
+    await pseudoFixture.run(({ f1: _f1 }) => {})
+    await pseudoFixture.fullRun(({ f1: _f1 }) => {})
 
     expect(setupCount).toBe(2)
     expect(teardownCount).toBe(2)
@@ -264,16 +264,16 @@ test('reset', async () => {
         f1: number
     }>({
         f1: {
-            setup: async () => {
+            setup: () => {
                 setupCounter++
                 return setupCounter
             }
         }
     })
 
-    await pseudoFixture.run(async ({ f1: _f1 }) => {})
+    await pseudoFixture.run(({ f1: _f1 }) => {})
     await pseudoFixture.runTeardown()
-    await pseudoFixture.run(async ({ f1: _f1 }) => {})
+    await pseudoFixture.run(({ f1: _f1 }) => {})
 
     expect(setupCounter).toBe(2)
 })
@@ -291,7 +291,7 @@ test('options', async () => {
     >(
         {
             f1: {
-                setup: async ({ o1, o2 }) => {
+                setup: ({ o1, o2 }) => {
                     return o1 + o2
                 }
             }
@@ -300,14 +300,14 @@ test('options', async () => {
     )
 
     expect(
-        await pseudoFixture.run(async ({ f1 }) => {
+        await pseudoFixture.run(({ f1 }) => {
             return f1
         })
     ).toBe(o1Default + o2Default)
 
     expect(
         await pseudoFixture.fullRun(
-            async ({ f1 }) => {
+            ({ f1 }) => {
                 return f1
             },
             {
@@ -322,7 +322,7 @@ test('undefined return from setup', async () => {
 
     const pseudoFixture = new PseudoFixture<{ a: undefined }>({
         a: {
-            setup: async () => {
+            setup: () => {
                 setupCalls++
                 return undefined
             }
@@ -333,7 +333,7 @@ test('undefined return from setup', async () => {
         expect(a).toBeUndefined()
     })
 
-    await pseudoFixture.run(async ({ a }) => {
+    await pseudoFixture.run(({ a }) => {
         expect(a).toBeUndefined()
     })
 
