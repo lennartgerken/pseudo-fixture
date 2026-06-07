@@ -59,7 +59,7 @@ const exportParams = <T extends object>(
         }
     }
 
-    const fnParse = acorn.parse(fn.toString(), {
+    const fnParse = acorn.parse(`(${fn.toString()})`, {
         ecmaVersion: 'latest'
     })
 
