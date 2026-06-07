@@ -38,7 +38,10 @@ type FullRunArgs<Fixtures, Return, Options extends object = object> =
               options?: { [Key in keyof Options]?: Options[Key] }
           ]
 
-const exportParams = <T extends object>(fn: (obj: T) => unknown) => {
+const exportParams = <T extends object>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fn: (obj: T, ...args: any[]) => unknown
+) => {
     const props: (keyof T)[] = []
     const setProps = (
         pattern: acorn.ArrowFunctionExpression | acorn.FunctionDeclaration
@@ -154,13 +157,14 @@ export class PseudoFixture<
      * @param callback Function to run inside the PseudoFixture
      * @returns Return value of the callback
      */
-    async run<T>(
-        callback: (fixtures: Fixtures & Options) => Promise<T> | T
+    async run<T, CA extends unknown[]>(
+        callback: (fixtures: Fixtures & Options, ...args: CA) => Promise<T> | T,
+        ...args: CA
     ): Promise<T> {
         for (const param of exportParams(callback))
             await this.prepareFixture(param)
 
-        return callback(this.readyFixtures)
+        return callback(this.readyFixtures, ...args)
     }
 
     /**
