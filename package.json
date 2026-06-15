@@ -36,8 +36,10 @@
     ],
     "scripts": {
         "pretty": "prettier . --write",
-        "pretty-check": "prettier . --check",
+        "pretty:check": "prettier . --check",
         "lint": "eslint .",
+        "type-check": "tsc -p tsconfig.json --noEmit",
+        "type-check:tests": "tsc -p tests/tsconfig.json --noEmit",
         "test": "vitest run",
         "build": "rollup -c"
     },
