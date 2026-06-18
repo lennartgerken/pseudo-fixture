@@ -70,11 +70,9 @@ describe('run', () => {
             }
         })
 
-        const actual = await pseudoFixture.run(({ f1 }) => {
-            return f1
-        })
-
-        expect(actual).toBe(undefined)
+        await expect(pseudoFixture.run(({ f1: _ }) => {})).rejects.toThrow(
+            "Fixture 'f1' is used as circular dependency"
+        )
     })
 })
 
@@ -250,6 +248,7 @@ test('full run', async () => {
         }
     })
 
+    await pseudoFixture.run(({ f1: _f1 }) => {})
     await pseudoFixture.run(({ f1: _f1 }) => {})
     await pseudoFixture.fullRun(({ f1: _f1 }) => {})
 
