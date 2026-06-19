@@ -99,8 +99,8 @@ export class PseudoFixture<
     protected readyFixtures: Partial<Fixtures & Options>
     protected globalFixtureKeys: Set<keyof (Fixtures & Options)>
     protected teardownsToRun: {
+        fixtureName: keyof (Fixtures & Options)
         teardown: Teardown<Fixtures, Options>
-        global: boolean
     }[]
     protected waitForPreparation: Set<keyof Definitions<Fixtures, Options>>
 
@@ -184,8 +184,8 @@ export class PseudoFixture<
 
             if (teardown)
                 this.teardownsToRun.unshift({
-                    teardown,
-                    global: isGlobal
+                    fixtureName,
+                    teardown
                 })
 
             assertFixturesPrepared(this.readyFixtures, params)
@@ -225,7 +225,11 @@ export class PseudoFixture<
     async fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
         await this.runTeardown()
         const options = (args[1] as Options) ?? this.defaultOptions
-        this.readyFixtures = { ...this.defaultOptions, ...options }
+        this.readyFixtures = {
+            ...this.defaultOptions,
+            ...this.readyFixtures,
+            ...options
+        }
         try {
             return await this.run(args[0])
         } finally {
@@ -234,24 +238,50 @@ export class PseudoFixture<
     }
 
     /**
+     * Prepares all fixtures required by the callback function and executes the callback with them.
+     * Before and after the callback the global teardown is run.
+     * @param args[0] Function to run inside the PseudoFixture.
+     * @param args[1] Override default options.
+     * @returns Return value of the callback
+     */
+    async fullGlobalRun<T>(
+        ...args: FullRunArgs<Fixtures, T, Options>
+    ): Promise<T> {
+        await this.runGlobalTeardown()
+        const options = (args[1] as Options) ?? this.defaultOptions
+        this.readyFixtures = {
+            ...this.defaultOptions,
+            ...this.readyFixtures,
+            ...options
+        }
+        try {
+            return await this.run(args[0])
+        } finally {
+            await this.runGlobalTeardown()
+        }
+    }
+
+    /**
      * Runs all local teardown functions of used fixtures.
      */
     async runTeardown() {
         for (const current of this.teardownsToRun) {
-            if (!current.global) {
+            if (!this.globalFixtureKeys.has(current.fixtureName)) {
                 const params = exportParams(current.teardown)
                 assertFixturesPrepared(this.readyFixtures, params)
                 await current.teardown(this.readyFixtures)
             }
         }
 
-        this.readyFixtures = { ...this.defaultOptions }
         for (const key of Object.keys(this.readyFixtures) as Array<
             keyof (Fixtures & Options)
         >) {
             if (!this.globalFixtureKeys.has(key)) delete this.readyFixtures[key]
         }
-        this.teardownsToRun = this.teardownsToRun.filter(({ global }) => global)
+        this.readyFixtures = { ...this.defaultOptions, ...this.readyFixtures }
+        this.teardownsToRun = this.teardownsToRun.filter(({ fixtureName }) =>
+            this.globalFixtureKeys.has(fixtureName)
+        )
         this.waitForPreparation.clear()
     }
 
@@ -268,6 +298,7 @@ export class PseudoFixture<
         this.readyFixtures = { ...this.defaultOptions }
         this.teardownsToRun = []
         this.waitForPreparation.clear()
+        this.globalFixtureKeys.clear()
     }
 
     async [Symbol.asyncDispose]() {
