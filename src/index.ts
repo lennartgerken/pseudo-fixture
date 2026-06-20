@@ -8,7 +8,7 @@ type Teardown<Fixtures, Options extends object> = (
     fixtures: Fixtures & Options
 ) => Promise<void> | void
 
-type Definitions<Fixtures, Options extends object> = {
+export type Definitions<Fixtures, Options extends object> = {
     [Key in keyof Fixtures]:
         | {
               setup: Setup<Fixtures, Options, Key>
