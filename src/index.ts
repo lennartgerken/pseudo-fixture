@@ -226,7 +226,6 @@ export class PseudoFixture<
         await this.runTeardown()
         const options = (args[1] as Options) ?? this.defaultOptions
         this.readyFixtures = {
-            ...this.defaultOptions,
             ...this.readyFixtures,
             ...options
         }
@@ -250,7 +249,6 @@ export class PseudoFixture<
         await this.runGlobalTeardown()
         const options = (args[1] as Options) ?? this.defaultOptions
         this.readyFixtures = {
-            ...this.defaultOptions,
             ...this.readyFixtures,
             ...options
         }
