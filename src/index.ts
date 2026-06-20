@@ -215,15 +215,11 @@ export class PseudoFixture<
         return callback(this.readyFixtures, ...args)
     }
 
-    /**
-     * Prepares all fixtures required by the callback function and executes the callback with them.
-     * Before and after the callback the teardown is run.
-     * @param args[0] Function to run inside the PseudoFixture.
-     * @param args[1] Override default options.
-     * @returns Return value of the callback
-     */
-    async fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
-        await this.runTeardown()
+    protected async genericFullRun<T>(
+        teardown: () => Promise<void>,
+        ...args: FullRunArgs<Fixtures, T, Options>
+    ): Promise<T> {
+        await teardown()
         const options = (args[1] as Options) ?? this.defaultOptions
         this.readyFixtures = {
             ...this.readyFixtures,
@@ -232,8 +228,19 @@ export class PseudoFixture<
         try {
             return await this.run(args[0])
         } finally {
-            await this.runTeardown()
+            await teardown()
         }
+    }
+
+    /**
+     * Prepares all fixtures required by the callback function and executes the callback with them.
+     * Before and after the callback the teardown is run.
+     * @param args[0] Function to run inside the PseudoFixture.
+     * @param args[1] Override default options.
+     * @returns Return value of the callback
+     */
+    async fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
+        return this.genericFullRun(() => this.runTeardown(), ...args)
     }
 
     /**
@@ -246,17 +253,7 @@ export class PseudoFixture<
     async fullGlobalRun<T>(
         ...args: FullRunArgs<Fixtures, T, Options>
     ): Promise<T> {
-        await this.runGlobalTeardown()
-        const options = (args[1] as Options) ?? this.defaultOptions
-        this.readyFixtures = {
-            ...this.readyFixtures,
-            ...options
-        }
-        try {
-            return await this.run(args[0])
-        } finally {
-            await this.runGlobalTeardown()
-        }
+        return this.genericFullRun(() => this.runGlobalTeardown(), ...args)
     }
 
     /**
