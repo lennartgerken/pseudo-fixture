@@ -70,11 +70,9 @@ describe('run', () => {
             }
         })
 
-        const actual = await pseudoFixture.run(({ f1 }) => {
-            return f1
-        })
-
-        expect(actual).toBe(undefined)
+        await expect(pseudoFixture.run(({ f1: _ }) => {})).rejects.toThrow(
+            "Fixture 'f1' is used as circular dependency"
+        )
     })
 })
 
@@ -209,6 +207,186 @@ describe('teardown', () => {
     })
 })
 
+describe('global', () => {
+    test('reuse', async () => {
+        let f1Value = 0
+        const f2Value = 'f2'
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: number
+            f2: string
+        }>({
+            f1: {
+                setup: () => {
+                    f1Value++
+                    return f1Value
+                },
+                global: true
+            },
+            f2: {
+                setup: ({ f1 }) => {
+                    return f2Value + f1
+                }
+            }
+        })
+
+        const expected = f2Value + 1
+
+        expect(
+            await pseudoFixture.run(({ f2 }) => {
+                return f2
+            })
+        ).toBe(expected)
+
+        await pseudoFixture.runTeardown()
+
+        expect(
+            await pseudoFixture.run(({ f2 }) => {
+                return f2
+            })
+        ).toBe(expected)
+
+        expect(
+            await pseudoFixture.fullRun(({ f2 }) => {
+                return f2
+            })
+        ).toBe(expected)
+
+        expect(
+            await pseudoFixture.run(({ f2 }) => {
+                return f2
+            })
+        ).toBe(expected)
+    })
+
+    test('teardown', async () => {
+        let f1TeardownCount = 0
+        let f2TeardownCount = 0
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: void
+            f2: void
+        }>({
+            f1: {
+                setup: () => {},
+                teardown: () => {
+                    f1TeardownCount++
+                },
+                global: true
+            },
+            f2: {
+                setup: ({ f1: _ }) => {},
+                teardown: () => {
+                    f2TeardownCount++
+                }
+            }
+        })
+
+        await pseudoFixture.run(({ f2: _ }) => {})
+        await pseudoFixture.runTeardown()
+        expect(f2TeardownCount).toBe(1)
+        expect(f1TeardownCount).toBe(0)
+
+        await pseudoFixture.fullRun(({ f2: _ }) => {})
+        expect(f2TeardownCount).toBe(2)
+        expect(f1TeardownCount).toBe(0)
+
+        await pseudoFixture.runGlobalTeardown()
+        expect(f2TeardownCount).toBe(2)
+        expect(f1TeardownCount).toBe(1)
+
+        await pseudoFixture.run(({ f2: _ }) => {})
+        await pseudoFixture.runGlobalTeardown()
+        expect(f2TeardownCount).toBe(3)
+        expect(f1TeardownCount).toBe(2)
+
+        await pseudoFixture.fullGlobalRun(({ f2: _ }) => {})
+        expect(f2TeardownCount).toBe(4)
+        expect(f1TeardownCount).toBe(3)
+    })
+
+    test('full run', async () => {
+        let setupCount = 0
+        let teardownCount = 0
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: string
+        }>({
+            f1: {
+                setup: () => {
+                    setupCount++
+                    return ''
+                },
+                teardown: () => {
+                    teardownCount++
+                },
+                global: true
+            }
+        })
+
+        await pseudoFixture.run(({ f1: _ }) => {})
+        expect(setupCount).toBe(1)
+        expect(teardownCount).toBe(0)
+        await pseudoFixture.fullRun(({ f1: _ }) => {})
+        expect(setupCount).toBe(1)
+        expect(teardownCount).toBe(0)
+        await pseudoFixture.fullGlobalRun(({ f1: _ }) => {})
+        expect(setupCount).toBe(2)
+        expect(teardownCount).toBe(2)
+    })
+
+    describe('transform local fixture', () => {
+        let f1SetupCount: number
+        let pseudoFixture: PseudoFixture<{
+            f1: void
+            f2: void
+        }>
+
+        test.beforeEach(() => {
+            f1SetupCount = 0
+
+            pseudoFixture = new PseudoFixture<{
+                f1: void
+                f2: void
+            }>({
+                f1: {
+                    setup: () => {
+                        f1SetupCount++
+                    }
+                },
+                f2: {
+                    setup: ({ f1: _ }) => {},
+                    global: true
+                }
+            })
+        })
+
+        test('same run', async () => {
+            await pseudoFixture.run(({ f2: _ }) => {})
+            await pseudoFixture.fullRun(({ f2: _ }) => {})
+
+            expect(f1SetupCount).toBe(1)
+        })
+
+        test('prerun', async () => {
+            await pseudoFixture.run(({ f1: _ }) => {})
+            await pseudoFixture.run(({ f2: _ }) => {})
+            await pseudoFixture.fullRun(({ f2: _ }) => {})
+
+            expect(f1SetupCount).toBe(1)
+        })
+
+        test('reset', async () => {
+            await pseudoFixture.run(({ f2: _ }) => {})
+            await pseudoFixture.runGlobalTeardown()
+            await pseudoFixture.run(({ f1: _ }) => {})
+            await pseudoFixture.runTeardown()
+
+            expect(f1SetupCount).toBe(2)
+        })
+    })
+})
+
 test('simple setup', async () => {
     const f1Value = 'f1'
     const f2Value = 'f2'
@@ -250,6 +428,7 @@ test('full run', async () => {
         }
     })
 
+    await pseudoFixture.run(({ f1: _f1 }) => {})
     await pseudoFixture.run(({ f1: _f1 }) => {})
     await pseudoFixture.fullRun(({ f1: _f1 }) => {})
 

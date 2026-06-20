@@ -13,8 +13,15 @@ npm i -D pseudo-fixture
 `PseudoFixture` takes a fixtures type and optionally an options type.
 You define how each fixture is created with setup functions and can optionally add teardown functions.
 Setup and teardown functions can depend on other fixtures. Dependencies are handled automatically.
-If you use options, you also provide default option values.
 You can then run callbacks through `PseudoFixture`. Any fixtures used by the callback are automatically prepared and passed in.
+
+## Fixture Definitions
+
+- **setup**: A function that specifies how the fixture is created.
+
+- **teardown?**: A function that specifies how the fixture is cleaned up after it has been used.
+
+- **global?**: A flag that specifies whether a fixture is global. When set to `true`, the fixture is not cleaned up during normal teardown and remains available until the global teardown is executed.
 
 ## Methods of PseudoFixture
 
@@ -22,7 +29,11 @@ You can then run callbacks through `PseudoFixture`. Any fixtures used by the cal
 
 - **fullRun(callback, options?)**: Prepares all fixtures required by the callback function and executes the callback with them. Before and after the callback the teardown is run.
 
-- **runTeardown()**: Runs all teardown functions of used fixtures.
+- **fullGlobalRun(callback, options?)**: Prepares all fixtures required by the callback function and executes the callback with them. Before and after the callback the global teardown is run.
+
+- **runTeardown()**: Runs all local teardown functions of used fixtures.
+
+- **runGlobalTeardown()**: Runs all teardown functions of used fixtures.
 
 ## Example Usage in Playwright
 
