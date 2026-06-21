@@ -239,7 +239,7 @@ export class PseudoFixture<
      * @param args[1] Override default options.
      * @returns Return value of the callback
      */
-    async fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
+    fullRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
         return this.genericFullRun(() => this.runTeardown(), ...args)
     }
 
@@ -250,9 +250,7 @@ export class PseudoFixture<
      * @param args[1] Override default options.
      * @returns Return value of the callback
      */
-    async fullGlobalRun<T>(
-        ...args: FullRunArgs<Fixtures, T, Options>
-    ): Promise<T> {
+    fullGlobalRun<T>(...args: FullRunArgs<Fixtures, T, Options>): Promise<T> {
         return this.genericFullRun(() => this.runGlobalTeardown(), ...args)
     }
 
