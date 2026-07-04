@@ -212,10 +212,10 @@ export class PseudoFixture<
         ...args: CA
     ): Promise<T> {
         try {
-        const params = exportParams(callback)
-        for (const param of params) await this.prepareFixture(param)
-        assertFixturesPrepared(this.readyFixtures, params)
-        return callback(this.readyFixtures, ...args)
+            const params = exportParams(callback)
+            for (const param of params) await this.prepareFixture(param)
+            assertFixturesPrepared(this.readyFixtures, params)
+            return callback(this.readyFixtures, ...args)
         } catch (e) {
             this.failed = true
             throw e
@@ -303,6 +303,6 @@ export class PseudoFixture<
     }
 
     async [Symbol.asyncDispose]() {
-        await this.runTeardown()
+        await this.runGlobalTeardown()
     }
 }
