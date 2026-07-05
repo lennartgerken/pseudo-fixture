@@ -215,7 +215,7 @@ export class PseudoFixture<
             const params = exportParams(callback)
             for (const param of params) await this.prepareFixture(param)
             assertFixturesPrepared(this.readyFixtures, params)
-            return callback(this.readyFixtures, ...args)
+            return await callback(this.readyFixtures, ...args)
         } catch (e) {
             this.failed = true
             throw e
