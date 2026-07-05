@@ -5,7 +5,8 @@ type Setup<Fixtures, Options extends object, Key extends keyof Fixtures> = (
 ) => Promise<Fixtures[Key]> | Fixtures[Key]
 
 type Teardown<Fixtures, Options extends object> = (
-    fixtures: Fixtures & Options
+    fixtures: Fixtures & Options,
+    failed: boolean
 ) => Promise<void> | void
 
 export type Definitions<Fixtures, Options extends object> = {
@@ -103,6 +104,7 @@ export class PseudoFixture<
         teardown: Teardown<Fixtures, Options>
     }[]
     protected waitForPreparation: Set<keyof Definitions<Fixtures, Options>>
+    protected failed: boolean
 
     /**
      * Creates a PseudoFixture.
@@ -116,6 +118,7 @@ export class PseudoFixture<
         this.globalFixtureKeys = new Set()
         this.teardownsToRun = []
         this.waitForPreparation = new Set()
+        this.failed = false
     }
 
     protected async prepareFixture(
@@ -208,11 +211,15 @@ export class PseudoFixture<
         callback: (fixtures: Fixtures & Options, ...args: CA) => Promise<T> | T,
         ...args: CA
     ): Promise<T> {
-        const params = exportParams(callback)
-        for (const param of params) await this.prepareFixture(param)
-
-        assertFixturesPrepared(this.readyFixtures, params)
-        return callback(this.readyFixtures, ...args)
+        try {
+            const params = exportParams(callback)
+            for (const param of params) await this.prepareFixture(param)
+            assertFixturesPrepared(this.readyFixtures, params)
+            return await callback(this.readyFixtures, ...args)
+        } catch (e) {
+            this.failed = true
+            throw e
+        }
     }
 
     protected async genericFullRun<T>(
@@ -262,7 +269,7 @@ export class PseudoFixture<
             if (!this.globalFixtureKeys.has(current.fixtureName)) {
                 const params = exportParams(current.teardown)
                 assertFixturesPrepared(this.readyFixtures, params)
-                await current.teardown(this.readyFixtures)
+                await current.teardown(this.readyFixtures, this.failed)
             }
         }
 
@@ -285,16 +292,17 @@ export class PseudoFixture<
         for (const current of this.teardownsToRun) {
             const params = exportParams(current.teardown)
             assertFixturesPrepared(this.readyFixtures, params)
-            await current.teardown(this.readyFixtures)
+            await current.teardown(this.readyFixtures, this.failed)
         }
 
         this.readyFixtures = { ...this.defaultOptions }
         this.teardownsToRun = []
         this.waitForPreparation.clear()
         this.globalFixtureKeys.clear()
+        this.failed = false
     }
 
     async [Symbol.asyncDispose]() {
-        await this.runTeardown()
+        await this.runGlobalTeardown()
     }
 }

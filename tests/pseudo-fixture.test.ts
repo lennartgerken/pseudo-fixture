@@ -205,6 +205,37 @@ describe('teardown', () => {
 
         expect(teardownRun).toBeTruthy()
     })
+
+    test('use failed', async () => {
+        let actual: boolean | null = null
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: void
+        }>({
+            f1: {
+                setup: () => {
+                    return
+                },
+                teardown: ({ f1: _ }, failed) => {
+                    actual = failed
+                }
+            }
+        })
+
+        await expect(
+            pseudoFixture.run(({ f1: _f1 }) => {
+                throw new Error()
+            })
+        ).rejects.toThrow()
+
+        await pseudoFixture.runTeardown()
+        expect(actual).toBe(true)
+        await pseudoFixture.runGlobalTeardown()
+
+        await pseudoFixture.run(({ f1: _f1 }) => {})
+        await pseudoFixture.runTeardown()
+        expect(actual).toBe(false)
+    })
 })
 
 describe('global', () => {
