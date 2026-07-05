@@ -17,9 +17,9 @@ You can then run callbacks through `PseudoFixture`. Any fixtures used by the cal
 
 ## Fixture Definitions
 
-- **setup**: A function that specifies how the fixture is created.
+- **setup**: A function that specifies how the fixture is created. It receives any required fixtures and options as its first parameter.
 
-- **teardown?**: A function that specifies how the fixture is cleaned up after it has been used.
+- **teardown?**: A function that specifies how the fixture is cleaned up after it has been used. It receives any required fixtures and options as its first parameter and a `failed` boolean as its second parameter that indicates whether the `PseudoFixture` run failed.
 
 - **global?**: A flag that specifies whether a fixture is global. When set to `true`, the fixture is not cleaned up during normal teardown and remains available until the global teardown is executed.
 
