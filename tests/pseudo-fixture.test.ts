@@ -418,6 +418,124 @@ describe('global', () => {
     })
 })
 
+describe('auto', () => {
+    test('setup', async () => {
+        let runF1 = false
+        const f2Value = 'f2'
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: void
+            f2: string
+        }>({
+            f1: {
+                setup: () => {
+                    runF1 = true
+                },
+                auto: true
+            },
+            f2: {
+                setup: () => {
+                    return f2Value
+                }
+            }
+        })
+
+        const f2Result = await pseudoFixture.run(({ f2 }) => {
+            return f2
+        })
+
+        expect(f2Result).toBe(f2Value)
+        expect(runF1).toBeTruthy()
+    })
+
+    test('teardown', async () => {
+        let runF1 = false
+        let runF2 = false
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: void
+            f2: void
+        }>({
+            f1: {
+                setup: () => {},
+                teardown: () => {
+                    runF1 = true
+                },
+                auto: true
+            },
+            f2: {
+                setup: () => {},
+                teardown: () => {
+                    runF2 = true
+                }
+            }
+        })
+
+        await pseudoFixture.run(({ f2: _ }) => {})
+        await pseudoFixture.runTeardown()
+
+        expect(runF1).toBeTruthy()
+        expect(runF2).toBeTruthy()
+    })
+
+    test('use other fixture', async () => {
+        const f1Value = 'f1'
+        const f2Value = 'f2'
+        let result: string | undefined
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: void
+            f2: string
+        }>({
+            f1: {
+                setup: ({ f2 }) => {
+                    result = f1Value + f2
+                },
+                auto: true
+            },
+            f2: {
+                setup: () => {
+                    return f2Value
+                }
+            }
+        })
+
+        await pseudoFixture.run(() => {})
+
+        expect(result).toBe(f1Value + f2Value)
+    })
+
+    test('use in other fixture', async () => {
+        let f1Counter = 0
+        const f2Value = 'f2'
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: number
+            f2: string
+        }>({
+            f1: {
+                setup: () => {
+                    f1Counter++
+                    return f1Counter
+                },
+                auto: true
+            },
+            f2: {
+                setup: ({ f1 }) => {
+                    return f2Value + f1
+                }
+            }
+        })
+
+        await pseudoFixture.run(() => {})
+        const actual = await pseudoFixture.run(({ f2 }) => {
+            return f2
+        })
+
+        expect(actual).toBe(f2Value + 1)
+    })
+})
+
 test('simple setup', async () => {
     const f1Value = 'f1'
     const f2Value = 'f2'
