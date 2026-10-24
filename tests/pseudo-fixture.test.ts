@@ -421,11 +421,11 @@ describe('global', () => {
 describe('auto', () => {
     test('setup', async () => {
         let runF1 = false
-        const f2Value = 'f2'
+        let runF2 = false
 
         const pseudoFixture = new PseudoFixture<{
             f1: void
-            f2: string
+            f2: void
         }>({
             f1: {
                 setup: () => {
@@ -435,16 +435,14 @@ describe('auto', () => {
             },
             f2: {
                 setup: () => {
-                    return f2Value
+                    runF2 = true
                 }
             }
         })
 
-        const f2Result = await pseudoFixture.run(({ f2 }) => {
-            return f2
-        })
+        await pseudoFixture.run(() => {})
 
-        expect(f2Result).toBe(f2Value)
+        expect(runF2).toBeFalsy()
         expect(runF1).toBeTruthy()
     })
 
@@ -533,6 +531,27 @@ describe('auto', () => {
         })
 
         expect(actual).toBe(f2Value + 1)
+    })
+
+    test('global', async () => {
+        let f1Count = 0
+
+        const pseudoFixture = new PseudoFixture<{
+            f1: void
+        }>({
+            f1: {
+                setup: () => {
+                    f1Count++
+                },
+                auto: true,
+                global: true
+            }
+        })
+
+        await pseudoFixture.fullRun(() => {})
+        await pseudoFixture.fullRun(() => {})
+
+        expect(f1Count).toBe(1)
     })
 })
 
