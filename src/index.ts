@@ -15,6 +15,7 @@ export type Definitions<Fixtures, Options extends object> = {
               setup: Setup<Fixtures, Options, Key>
               teardown?: Teardown<Fixtures, Options>
               global?: boolean
+              auto?: boolean
           }
         | Setup<Fixtures, Options, Key>
 }
@@ -212,6 +213,11 @@ export class PseudoFixture<
         ...args: CA
     ): Promise<T> {
         try {
+            for (const key in this.definitions) {
+                const definition = this.definitions[key]
+                if (typeof definition != 'function' && definition.auto)
+                    await this.prepareFixture(key)
+            }
             const params = exportParams(callback)
             for (const param of params) await this.prepareFixture(param)
             assertFixturesPrepared(this.readyFixtures, params)
