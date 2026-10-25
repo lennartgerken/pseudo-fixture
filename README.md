@@ -23,6 +23,8 @@ You can then run callbacks through `PseudoFixture`. Any fixtures used by the cal
 
 - **global?**: A flag that specifies whether a fixture is global. When set to `true`, the fixture is not cleaned up during normal teardown and remains available until the global teardown is executed.
 
+- **auto?**: A flag that specifies whether a fixture is created automatically. When set to `true`, the fixture is created regardless of whether it is used in the callback function.
+
 ## Methods of PseudoFixture
 
 - **run(callback)**: Prepares all fixtures required by the callback function and executes the callback with them.
